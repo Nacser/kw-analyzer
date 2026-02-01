@@ -12,8 +12,28 @@ function cerrarInfoApp() {
   document.getElementById('popupInfoApp').style.display = 'none';
 }
 
+function abrirInfoApp() {
+  document.getElementById('popupInfoApp').style.display = 'block';
+}
+
 // Event listeners para navegacion
 document.addEventListener("DOMContentLoaded", function() {
+  
+  // Listener para botón de información
+  const btnInfoApp = document.getElementById('btnInfoApp');
+  if (btnInfoApp) {
+    btnInfoApp.addEventListener('click', abrirInfoApp);
+  }
+  
+  // Click fuera del popup para cerrar
+  const popupInfoApp = document.getElementById('popupInfoApp');
+  if (popupInfoApp) {
+    popupInfoApp.addEventListener('click', function(e) {
+      if (e.target.id === 'popupInfoApp') {
+        cerrarInfoApp();
+      }
+    });
+  }
   
   const btnUnArchivo = document.getElementById('btnModoUnArchivo');
   const btnMultiples = document.getElementById('btnModoMultiplesArchivos');
@@ -206,3 +226,187 @@ document.addEventListener("DOMContentLoaded", function() {
   }
   
 });
+
+// ============================================================================
+// FUNCIONALIDAD DE AGRUPACION DE KEYWORDS
+// ============================================================================
+
+document.addEventListener("DOMContentLoaded", function() {
+  
+  // Detectar cuando se activa la agrupación
+  const filtroAgrupar = document.getElementById('filtroAgrupar');
+  if (filtroAgrupar) {
+    filtroAgrupar.addEventListener('change', function() {
+      // Esto será manejado por el script principal
+      console.log('Agrupación activada:', this.checked);
+    });
+  }
+  
+});
+
+function agruparYMostrarKeywords(data, inputId) {
+  const agruparInput = document.getElementById(inputId || 'agruparInput');
+  if (!agruparInput || !agruparInput.value.trim()) {
+    return null;
+  }
+  
+  const terminos = agruparInput.value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  if (terminos.length === 0) {
+    return null;
+  }
+  
+  // Crear grupos
+  const grupos = {};
+  terminos.forEach(termino => {
+    grupos[termino] = [];
+  });
+  grupos['otros'] = []; // Grupo para keywords que no coinciden
+  
+  // Clasificar keywords
+  data.forEach(row => {
+    const keyword = row['Keywords'] ? row['Keywords'].toLowerCase() : '';
+    let asignado = false;
+    
+    for (let termino of terminos) {
+      if (keyword.includes(termino)) {
+        grupos[termino].push(row);
+        asignado = true;
+        break; // Solo asignar a un grupo
+      }
+    }
+    
+    if (!asignado) {
+      grupos['otros'].push(row);
+    }
+  });
+  
+  return { grupos, terminos };
+}
+
+function generarHTMLGrupos(gruposData, columnas) {
+  if (!gruposData) return null;
+  
+  const { grupos, terminos } = gruposData;
+  let html = '<div class="grupos-container">';
+  
+  // Generar acordeón para cada grupo
+  [...terminos, 'otros'].forEach(termino => {
+    const items = grupos[termino];
+    if (!items || items.length === 0) return;
+    
+    const grupoId = 'grupo-' + termino.replace(/\s+/g, '-');
+    const count = items.length;
+    
+    html += `
+      <div class="grupo-accordion">
+        <div class="grupo-header" data-grupo="${grupoId}">
+          <span class="grupo-toggle">▶</span>
+          <span class="grupo-title">${termino.toUpperCase()} (${count} keywords)</span>
+          <button class="btn-export-group" data-grupo="${termino}" title="Exportar este grupo">
+            📥 Exportar
+          </button>
+        </div>
+        <div class="grupo-content" id="${grupoId}" style="display: none;">
+          <table>
+            <thead><tr>
+              <th style="width: 40px;"><input type="checkbox" class="select-all-group" data-grupo="${termino}" style="width: 18px; height: 18px; cursor: pointer;"></th>
+              ${columnas.map(col => `<th>${col}</th>`).join('')}
+            </tr></thead>
+            <tbody>
+    `;
+    
+    // Detectar columnas de meses (mismo regex que script.js)
+    const mesesRegex = /\(([a-zA-Z]{3})\s\d{4}\)/i;
+    const monthColumns = columnas.filter(k => mesesRegex.test(k));
+    
+    items.forEach((row) => {
+      // Calcular min/max para mapa de calor de esta fila
+      const valoresFila = monthColumns.map(k => {
+        const val = row[k];
+        if (val == null || val === "") return 0;
+        let s = String(val).replace(/,/g, "");
+        const n = parseFloat(s);
+        return isNaN(n) ? 0 : n;
+      });
+      const min = Math.min(...valoresFila.filter(v => !isNaN(v)));
+      const max = Math.max(...valoresFila.filter(v => !isNaN(v)));
+      const rango = max === min ? 1 : max - min;
+      
+      html += '<tr>';
+      html += `<td style="text-align: center;"><input type="checkbox" class="keyword-checkbox" data-keyword="${row['Keywords']}" style="width: 18px; height: 18px; cursor: pointer;"></td>`;
+      
+      columnas.forEach(key => {
+        let style = "";
+        
+        // Aplicar mapa de calor a columnas de meses
+        if (monthColumns.includes(key)) {
+          const value = row[key];
+          let numValue = 0;
+          if (value != null && value !== "") {
+            let s = String(value).replace(/,/g, "");
+            const n = parseFloat(s);
+            numValue = isNaN(n) ? 0 : n;
+          }
+          
+          let p = (numValue - min) / rango;
+          let r, g, b = 0;
+          if (p <= 0.5) {
+            r = Math.round(2 * p * 255);
+            g = 255;
+          } else {
+            r = 255;
+            g = Math.round(2 * (1 - p) * 255);
+          }
+          style = `background:rgb(${r},${g},0);`;
+        }
+        
+        if (key === 'Keywords') {
+          const keywordEncoded = encodeURIComponent(row[key]);
+          const googleUrl = `https://www.google.com/search?q=${keywordEncoded}`;
+          html += `<td style="display: flex; align-items: center; gap: 8px; padding: 8px;">
+            <a href="${googleUrl}" target="_blank" style="color: #667eea; text-decoration: none; flex: 1;" title="Buscar en Google">
+              ${row[key]}
+            </a>
+            <button class="btn-chart" data-keyword="${row[key]}" title="Ver evolución" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; transition: transform 0.2s;">
+              📈
+            </button>
+          </td>`;
+        } else {
+          html += `<td style="${style}">${row[key]}</td>`;
+        }
+      });
+      
+      html += '</tr>';
+    });
+    
+    html += `
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  return html;
+}
+
+// Hacer funciones globales
+window.agruparYMostrarKeywords = agruparYMostrarKeywords;
+window.generarHTMLGrupos = generarHTMLGrupos;
+
+function exportarGrupo(nombreGrupo, datos) {
+  if (!datos || datos.length === 0) {
+    alert('No hay datos en este grupo');
+    return;
+  }
+  
+  const ws = XLSX.utils.json_to_sheet(datos);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, nombreGrupo);
+  
+  const filename = `grupo-${nombreGrupo.replace(/\s+/g, '-')}.xlsx`;
+  XLSX.writeFile(wb, filename, { compression: true });
+}
+
+window.exportarGrupo = exportarGrupo;

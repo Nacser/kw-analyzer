@@ -370,6 +370,7 @@ function showSummaryAndTable() {
 
   // ---- Genera la tabla de datos ----
   let html = "<table><thead><tr>";
+  html += `<th style="width: 40px;"><input type="checkbox" id="select-all-keywords" style="width: 18px; height: 18px; cursor: pointer;" title="Seleccionar todo"></th>`;
   Object.keys(dataToShow[0]).forEach(key => {
     html += `<th>${key}</th>`;
   });
@@ -383,6 +384,7 @@ function showSummaryAndTable() {
     const rango = max === min ? 1 : max - min;
 
     let htmlRow = "<tr>";
+    htmlRow += `<td style="text-align: center;"><input type="checkbox" class="keyword-checkbox" data-keyword="${row['Keywords']}" style="width: 18px; height: 18px; cursor: pointer;"></td>`;
     Object.keys(row).forEach(key => {
       let style = "";
       if (monthColumns.includes(key)) {
@@ -404,7 +406,16 @@ function showSummaryAndTable() {
       }
       // SOLO para la celda de 'Keywords':
       if (key === 'Keywords') {
-        htmlRow += `<td class="cell-keyword" data-keyword="${row[key]}">${row[key]}</td>`;
+        const keywordEncoded = encodeURIComponent(row[key]);
+        const googleUrl = `https://www.google.com/search?q=${keywordEncoded}`;
+        htmlRow += `<td style="display: flex; align-items: center; gap: 8px; padding: 8px;">
+          <a href="${googleUrl}" target="_blank" style="color: #667eea; text-decoration: none; flex: 1;" title="Buscar en Google">
+            ${row[key]}
+          </a>
+          <button class="btn-chart" data-keyword="${row[key]}" title="Ver evolución" style="background: none; border: none; cursor: pointer; font-size: 18px; padding: 4px; transition: transform 0.2s;">
+            📈
+          </button>
+        </td>`;
       } else {
         htmlRow += `<td style="${style}">${row[key]}</td>`;
       }
@@ -414,17 +425,106 @@ function showSummaryAndTable() {
   });
 
   html += "</tbody></table>";
+  
+  // Verificar si hay agrupación activa
+  const filtroAgrupar = document.getElementById('filtroAgrupar');
+  if (filtroAgrupar && filtroAgrupar.checked && window.agruparYMostrarKeywords) {
+    const gruposData = window.agruparYMostrarKeywords(dataToShow);
+    if (gruposData) {
+      const columnas = Object.keys(dataToShow[0]);
+      const htmlGrupos = window.generarHTMLGrupos(gruposData, columnas);
+      if (htmlGrupos) {
+        document.getElementById('table').innerHTML = htmlGrupos;
+        
+        // Añadir listeners para acordeones
+        setTimeout(() => {
+          const tableEl = document.getElementById('table');
+          tableEl.querySelectorAll('.grupo-header').forEach(header => {
+            header.onclick = function() {
+              const accordion = this.closest('.grupo-accordion');
+              const content = accordion.querySelector('.grupo-content');
+              const toggle = this.querySelector('.grupo-toggle');
+              
+              if (content.style.display === 'none' || content.style.display === '') {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+              } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+              }
+            };
+          });
+          
+          tableEl.querySelectorAll('.btn-export-group').forEach(btn => {
+            btn.onclick = function(e) {
+              e.stopPropagation();
+              const grupo = this.getAttribute('data-grupo');
+              if (window.exportarGrupo) {
+                window.exportarGrupo(grupo, gruposData.grupos[grupo]);
+              }
+            };
+          });
+          
+          tableEl.querySelectorAll('.select-all-group').forEach(cb => {
+            cb.onclick = function(e) {
+              e.stopPropagation();
+              const grupoContent = this.closest('.grupo-accordion').querySelector('.grupo-content');
+              if (grupoContent) {
+                grupoContent.querySelectorAll('.keyword-checkbox').forEach(checkbox => {
+                  checkbox.checked = cb.checked;
+                });
+              }
+            };
+          });
+          
+          tableEl.querySelectorAll('.btn-chart').forEach(btn => {
+            btn.onclick = function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              const keyword = btn.getAttribute('data-keyword');
+              mostrarGraficaKeyword(keyword);
+            };
+            btn.onmouseenter = function() { this.style.transform = 'scale(1.2)'; };
+            btn.onmouseleave = function() { this.style.transform = 'scale(1)'; };
+          });
+        }, 50);
+        
+        return;
+      }
+    }
+  }
+  
+  // Si no hay agrupación, mostrar tabla normal
   document.getElementById('table').innerHTML = html;
 
-  // Listener para gráfica de keywords
+  // Listener para gráfica de keywords (botón chart) y select-all
   setTimeout(() => {
-    document.querySelectorAll('.cell-keyword').forEach(cell => {
-      cell.onclick = function() {
-        const keyword = cell.getAttribute('data-keyword');
-        console.log('[CLICK] sobre keyword:', keyword);
+    document.querySelectorAll('.btn-chart').forEach(btn => {
+      btn.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const keyword = btn.getAttribute('data-keyword');
+        console.log('[CLICK] botón gráfica para keyword:', keyword);
         mostrarGraficaKeyword(keyword);
       };
+      
+      btn.onmouseenter = function() {
+        this.style.transform = 'scale(1.2)';
+      };
+      btn.onmouseleave = function() {
+        this.style.transform = 'scale(1)';
+      };
     });
+    
+    const selectAllCheckbox = document.getElementById('select-all-keywords');
+    if (selectAllCheckbox) {
+      selectAllCheckbox.onclick = function() {
+        const checkboxes = document.querySelectorAll('.keyword-checkbox');
+        checkboxes.forEach(cb => {
+          cb.checked = selectAllCheckbox.checked;
+        });
+      };
+    }
   }, 50);
 
   // ---- Listeners para filtros de resumen ----
@@ -468,18 +568,29 @@ function showSummaryAndTable() {
 }
 
 document.getElementById('btnExportExcel').addEventListener('click', function() {
-    // Usamos los datos actuales mostrados
-    // filteredData SI hay filtros, excelData si no
-    const datosExport = filteredData.length ? filteredData : excelData;
-    if (!datosExport.length) return;
+    const checkboxes = document.querySelectorAll('.keyword-checkbox:checked');
+    
+    let datosExport;
+    if (checkboxes.length > 0) {
+      const selectedKeywords = Array.from(checkboxes).map(cb => cb.getAttribute('data-keyword'));
+      const dataToShow = filteredData.length ? filteredData : excelData;
+      datosExport = dataToShow.filter(row => selectedKeywords.includes(row['Keywords']));
+      console.log('Exportando', datosExport.length, 'keywords seleccionadas');
+    } else {
+      datosExport = filteredData.length ? filteredData : excelData;
+    }
+    
+    if (!datosExport.length) {
+      alert('No hay datos para exportar');
+      return;
+    }
 
-    // Crea una hoja JS
     const ws = XLSX.utils.json_to_sheet(datosExport);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Datos");
 
-    // Exporta el archivo
-    XLSX.writeFile(wb, "datos-filtrados.xlsx", { compression: true });
+    const filename = checkboxes.length > 0 ? "keywords-seleccionadas.xlsx" : "datos-filtrados.xlsx";
+    XLSX.writeFile(wb, filename, { compression: true });
 });
 
 // ---------- Pop-up gráfica
@@ -489,6 +600,7 @@ document.getElementById('btnExportExcel').addEventListener('click', function() {
   }
 
   function mostrarGraficaKeyword(keyword) {
+    console.log('Función mostrarGraficaKeyword llamada para:', keyword);
     console.log('ENTRANDO EN mostrarGraficaKeyword para:', keyword);
 
     const dataToShow = filteredData.length ? filteredData : excelData;
@@ -578,8 +690,28 @@ document.getElementById('incluirWordsInput')?.addEventListener('input', aplicarF
 document.getElementById('filtroNumPalabras')?.addEventListener('change', aplicarFiltrosMultiplesYResumen);
 document.getElementById('numPalabrasInput')?.addEventListener('input', aplicarFiltrosMultiplesYResumen);
 
+// Listener para agrupación - actualiza automáticamente al marcar
+document.getElementById('filtroAgrupar')?.addEventListener('change', function() {
+  showSummaryAndTable();
+});
+
 document.getElementById('selectMes').addEventListener('change', aplicarFiltrosMultiplesYResumen);
 
 document.getElementById('selectFiltroPico').addEventListener('change', aplicarFiltrosMultiplesYResumen);
 
+
+// Botones de cambio a múltiplesa rchivos y de exteracciones
+
+document.getElementById('btnModoUnArchivo').addEventListener('click', function() {
+  document.getElementById('sectionUnArchivo').style.display = 'block';
+  document.getElementById('sectionMultiplesArchivos').style.display = 'none';
+});
+
+document.getElementById('btnModoMultiplesArchivos').addEventListener('click', function() {
+  document.getElementById('sectionUnArchivo').style.display = 'none';
+  document.getElementById('sectionMultiplesArchivos').style.display = 'block';
+});
+
+
+  window.mostrarGraficaKeyword = mostrarGraficaKeyword;
 });

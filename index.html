@@ -7,252 +7,316 @@
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <div class="title-btn">
+
+<!-- ================================================================
+     HEADER
+     ================================================================ -->
+<header class="app-header">
+    <div class="header-brand">
         <h1>Analizador de Palabras Clave</h1>
         <button id="btnInfoApp">?</button>
-        <div id="popupInfoApp" style="display:none; position:fixed; top:8%; left:5%; width:90%; max-width:500px; background:#f9f6ee; border:2px solid #ccc; z-index:1001; box-shadow:0 2px 24px #888;">
-            <div style="padding:1em 2em;">
-                <h2>Bienvenido/a 🤗</h2>
-                <p>
-                Esta aplicación permite analizar, filtrar y exportar datos de palabras clave a partir de archivos cargados de excel (formato KeywordTool).<br>
-                <ul>
-                    <li>Puedes aplicar distintos filtros, ordenar por cualquier mes o datos de competencia y CPC.</li>
-                    <li>Haz clic en cada palabra clave para ver su evolución en una gráfica.</li>
-                    <li>Puedes exportar los resultados filtrados a Excel y restablecer los filtros en cualquier momento.</li>
-                </ul>
-                </p>
-                <button onclick="cerrarInfoApp()" style="margin-top:1em;">Cerrar</button>
-            </div>
+    </div>
+    <nav class="header-nav">
+        <button id="btnModoUnArchivo" class="nav-btn">Un archivo</button>
+        <button id="btnModoMultiplesArchivos" class="nav-btn">Varios archivos</button>
+        <button id="btnModoSearchConsole" class="nav-btn">Search Console</button>
+    </nav>
+</header>
+
+<!-- ================================================================
+     POPUP INFO
+     ================================================================ -->
+<div id="popupInfoApp">
+    <div class="info-popup-content">
+        <button class="info-close-btn" onclick="cerrarInfoApp()">×</button>
+        <h2>🎯 Analizador de Palabras Clave</h2>
+        <p class="info-intro">Herramienta profesional para analizar, filtrar y exportar datos de palabras clave desde archivos Excel (formato KeywordTool).</p>
+        <div class="info-section">
+            <h3>📊 Modos de Trabajo</h3>
+            <ul>
+                <li><strong>Un archivo:</strong> Análisis completo de un único archivo con todos los filtros disponibles</li>
+                <li><strong>Varios archivos:</strong> Procesamiento y comparación de múltiples archivos simultáneamente</li>
+                <li><strong>Search Console:</strong> Combina datos de KeywordTool con métricas de Google Search Console</li>
+            </ul>
         </div>
-        <div>
-            <button id="btnModoUnArchivo">Trabajo con un archivo</button>
-            <button id="btnModoMultiplesArchivos">Trabajo con varios archivos</button>
-            <button id="btnModoSearchConsole">Search Console</button>
+        <div class="info-section">
+            <h3>🔍 Funcionalidades Principales</h3>
+            <ul>
+                <li><strong>Filtros avanzados:</strong> Por volumen, competencia, CPC, número de palabras y más</li>
+                <li><strong>Agrupación inteligente:</strong> Organiza keywords por términos en acordeones desplegables</li>
+                <li><strong>Selección manual:</strong> Checkboxes para exportar solo las keywords que necesitas</li>
+                <li><strong>Visualización de datos:</strong> Gráficas de evolución mensual por keyword</li>
+                <li><strong>Búsqueda directa:</strong> Acceso rápido a Google Search para cada keyword</li>
+            </ul>
+        </div>
+        <div class="info-section">
+            <h3>📥 Exportación</h3>
+            <ul>
+                <li>Exporta datos completos o solo keywords seleccionadas</li>
+                <li>Exportación por grupos cuando uses la agrupación</li>
+                <li>Múltiples formatos: Excel individual, agrupado o ZIP</li>
+            </ul>
+        </div>
+        <div class="info-section">
+            <h3>💡 Consejos de Uso</h3>
+            <ul>
+                <li>Usa la <strong>agrupación</strong> para organizar keywords por categorías (ej: "crema, serum, aceite")</li>
+                <li>El botón <strong>📈</strong> junto a cada keyword muestra su evolución temporal</li>
+                <li>Click en la keyword abre búsqueda de Google en nueva pestaña</li>
+                <li>Los checkboxes permiten seleccionar manualmente qué exportar</li>
+                <li>Combina datos con Search Console para ver métricas reales de rendimiento</li>
+            </ul>
+        </div>
+        <div class="info-footer">
+            <button onclick="cerrarInfoApp()" class="btn-primary">Entendido, ¡empecemos!</button>
         </div>
     </div>
+</div>
 
-    <!-- SECCION 1: UN ARCHIVO -->
-    <section id="sectionUnArchivo">
-        <input type="file" id="fileInput" />
-        <hr>
-        <div class="upData">
+<!-- ================================================================
+     SECCION 1: UN ARCHIVO
+     ================================================================ -->
+<section id="sectionUnArchivo">
+    <div class="desktop-grid">
+
+        <!-- PANEL IZQUIERDO: Filtros plegable -->
+        <aside class="panel-filtros">
+            <button class="sidebar-toggle" title="Ocultar filtros">◀</button>
+
+            <input type="file" id="fileInput" />
+
             <div id="activeFilters">
-                <div class="firstFilters">
-                    <div>
-                        <label><input type="checkbox" id="filtroVolumen"> Filtrar por Search Volume</label>
-                        <div id="volumenRange" style="margin-left: 2em;">
-                            <p>Mín: <input type="number" id="minVolume" value=""></p>
-                            <p>Máx: <input type="number" id="maxVolume" value=""></p>
-                        </div>
-                        <p>
-                            <label>
-                            <input type="checkbox" id="filtroNumPalabras"> Filtrar número de palabras
-                            </label>
-                            <input type="number" id="numPalabrasInput" value="2" min="1" style="width: 60px;" />
-                        </p>
+                <div class="filter-section">
+                    <div class="filter-section-title">📊 Volumen</div>
+                    <label class="filter-row">
+                        <input type="checkbox" id="filtroVolumen"> Filtrar por Search Volume
+                    </label>
+                    <div id="volumenRange">
+                        <p>Mín: <input type="number" id="minVolume" value=""></p>
+                        <p>Máx: <input type="number" id="maxVolume" value=""></p>
                     </div>
-                    <div>
-                        <p><label>
-                            <input type="checkbox" id="filtroDuplicados"> Eliminar duplicados (orden/acento)
-                        </label></p>
-                        <div class="picoSelector">
-                            <p>Filtrado de búsquedas puntales</p>
-                            <select id="selectFiltroPico">
-                                <option value="todos">Mostrar todos</option>
-                                <option value="solo-pico">Mostrar solo filas con pico</option>
-                                <option value="sin-pico">Retirar filas con pico</option>
-                            </select>
+                    <label class="filter-row">
+                        <input type="checkbox" id="filtroNumPalabras"> Filtrar nº palabras
+                        <input type="number" id="numPalabrasInput" value="2" min="1" />
+                    </label>
+                </div>
+                <div class="filter-section">
+                    <div class="filter-section-title">🔧 Opciones</div>
+                    <label class="filter-row">
+                        <input type="checkbox" id="filtroDuplicados"> Eliminar duplicados (orden/acento)
+                    </label>
+                    <div class="picoSelector">
+                        <p>Búsquedas puntales</p>
+                        <select id="selectFiltroPico">
+                            <option value="todos">Mostrar todos</option>
+                            <option value="solo-pico">Mostrar solo filas con pico</option>
+                            <option value="sin-pico">Retirar filas con pico</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <div class="filter-section-title">📝 Palabras clave</div>
+                    <div class="filtrosPalabras">
+                        <div>
+                            <label class="filter-row"><input type="checkbox" id="filtroExcluir"> Excluir keywords</label>
+                            <input class="entryText" type="text" id="excludeWordsInput" placeholder="Palabras a excluir, separadas por coma">
+                        </div>
+                        <div>
+                            <label class="filter-row"><input type="checkbox" id="filtroIncluir"> Incluir keywords</label>
+                            <input class="entryText" type="text" id="incluirWordsInput" placeholder="Palabras a incluir, separadas por coma">
+                        </div>
+                        <div>
+                            <label class="filter-row"><input type="checkbox" id="filtroAgrupar"> Agrupar por términos</label>
+                            <input class="entryText" type="text" id="agruparInput" placeholder="Términos separados por coma (ej: crema, hidratante)">
                         </div>
                     </div>
                 </div>
-                <div class="filtrosPalabras">
-                    <div>
-                        <label>
-                            <input type="checkbox" id="filtroExcluir"> Excluir keywords
-                        </label>
-                        <input class="entryText" type="text" id="excludeWordsInput" placeholder="Palabras a excluir, separadas por coma">
-                    </div>
-                    <div>
-                        <label>
-                            <input type="checkbox" id="filtroIncluir"> Incluir keywords
-                        </label>
-                        <input class="entryText" type="text" id="incluirWordsInput" placeholder="Palabras a incluir, separadas por coma">
-                    </div>
-                </div>
             </div>
-            <div id="summary"></div>
-        </div>
-        <hr>
-        <div class="table-buttons" id="pre-table">
-            <div class="month-order">
-                <label>
-                    Ordenar por mes:
-                    <select id="selectMes"></select>
-                </label>
-            </div>
-            <button class="btnExportExcel" id="btnExportExcel">Exportar datos filtrados</button>
-        </div>
-        <div id="table"></div>
-    </section>
+        </aside>
 
-    <!-- SECCION 2: MULTIPLES ARCHIVOS -->
-    <div id="sectionMultiplesArchivos" style="display:none;">
-        <input type="file" id="mm_multiFileInput" multiple />
-        
-        <div class="card">
-            <h3 class="card-title">Archivos Cargados</h3>
-            <div class="card-content">
-                <strong>📁 Archivos:</strong> <span id="mm_nombreArchivos">Ninguno</span>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h3 class="card-title">Filtros</h3>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 15px;">
-                <div class="filter-box">
-                    <label class="filter-label">
-                        <input type="checkbox" id="mm_filtroVolumen" class="filter-checkbox" />
-                        Filtrar por volumen
-                    </label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-left: 28px; margin-top: 10px;">
-                        <input type="number" id="mm_minVolume" placeholder="Mín" class="filter-input"/>
-                        <input type="number" id="mm_maxVolume" placeholder="Máx" class="filter-input"/>
-                    </div>
+        <!-- PANEL DERECHO -->
+        <main class="panel-principal">
+
+            <!-- Resumen plegable -->
+            <div class="summary-wrapper">
+                <div class="summary-header" onclick="this.closest('.summary-wrapper').classList.toggle('collapsed')">
+                    <span class="toggle-icon">▼</span>
+                    <span class="summary-title">📊 Resumen</span>
                 </div>
-                
-                <div class="filter-box">
-                    <label class="filter-label">
-                        <input type="checkbox" id="mm_filtroDuplicados" class="filter-checkbox" />
-                        Quitar duplicados (normalizado)
-                    </label>
+                <div class="summary-body">
+                    <div id="summary"></div>
                 </div>
             </div>
-            
-            <div class="filter-box" style="margin-bottom: 15px;">
-                <label class="filter-label">
-                    <input type="checkbox" id="mm_filtroExcluir" class="filter-checkbox" />
-                    Excluir keywords
-                </label>
-                <input type="text" id="mm_excludeWordsInput" placeholder="palabra1, palabra2, ..." class="filter-text-input"/>
+
+            <!-- Toolbar -->
+            <div class="table-buttons" id="pre-table">
+                <div class="month-order">
+                    <label>Ordenar por mes: <select id="selectMes"></select></label>
+                </div>
+                <div class="toolbar-actions">
+                    <button class="btnExportExcel" id="btnExportExcel">📥 Exportar datos filtrados</button>
+                    <button class="btn-copiar" id="btnCopiarKeywords" data-tooltip="Copia en portapapeles las keywords para pegar en herramienta de SERPs u otros usos.">📋 Copiar keywords</button>
+                </div>
             </div>
-            
-            <div class="filter-box" style="margin-bottom: 15px;">
-                <label class="filter-label">
-                    <input type="checkbox" id="mm_filtroIncluir" class="filter-checkbox" />
-                    Incluir solo keywords
-                </label>
-                <input type="text" id="mm_incluirWordsInput" placeholder="palabra1, palabra2, ..." class="filter-text-input"/>
-            </div>
-            
-            <div class="filter-box">
-                <label class="filter-label">
-                    <input type="checkbox" id="mm_soloPrimerDato" class="filter-checkbox" />
-                    Mostrar solo la primera fila de cada archivo
-                </label>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h3 class="card-title">Acciones</h3>
-            
-            <div class="action-buttons">
-                <button id="mm_btnProcesar" class="btn-primary" data-tooltip="Aplica los filtros seleccionados y muestra los resultados en una tabla">
-                    🔄 Procesar y Mostrar
-                </button>
-                <button id="mm_btnExportarMultiples" class="btn-primary" data-tooltip="Exporta todos los archivos procesados en un único archivo Excel">
-                    📥 Exportar a Excel
-                </button>
-                <button id="mm_btnExportarAgrupado" class="btn-success" data-tooltip="Agrupa las keywords por el término inicial y exporta todo en un excel">
-                    📊 Exportar Agrupado
-                </button>
-                <button id="mm_btnExportarZip" class="btn-warning" data-tooltip="Genera un archivo ZIP con un Excel por agrupación de keywords según su inicial">
-                    🗜️ Exportar en ZIP
-                </button>
-                <button id="mmbtnUnirArchivos" class="btn-purple" data-tooltip="Une múltiples archivos manteniendo todas las columnas de cada uno">
-                    🔗 Unir por Palabra Clave
-                </button>
-            </div>
-        </div>
-        
-        <div class="card">
-            <h3 class="card-title">Resumen</h3>
-            <div id="mm_resumenMultiples" class="card-content">
-                Esperando archivos...
-            </div>
-        </div>
-        
-        <div id="mm_tablaMultiples"></div>
+
+            <!-- Barra scroll + Tabla -->
+            <div class="scroll-nav" id="scrollNav1"><div class="scroll-nav-thumb"></div></div>
+            <div id="table"></div>
+        </main>
     </div>
+</section>
 
-    <!-- SECCION 3: SEARCH CONSOLE -->
-    <div id="sectionSearchConsole" style="display:none;">
-        <h2>📊 Combinar Keywords con Search Console</h2>
-        
-        <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;">
-            <h3>Paso 1: Carga tus archivos</h3>
-            <p>Sube un archivo de keywords (KeywordTool) y un export de Search Console (Excel)</p>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
-                <div>
-                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">Keywords File (Excel)</label>
-                    <input type="file" id="scKeywordsFile" accept=".xlsx" />
+<!-- ================================================================
+     SECCION 2: MULTIPLES ARCHIVOS
+     ================================================================ -->
+<div id="sectionMultiplesArchivos" style="display:none;">
+    <div class="desktop-grid">
+
+        <!-- PANEL IZQUIERDO -->
+        <aside class="panel-filtros">
+            <button class="sidebar-toggle" title="Ocultar filtros">◀</button>
+
+            <input type="file" id="mm_multiFileInput" multiple />
+
+            <div class="card">
+                <h3 class="card-title">📁 Archivos Cargados</h3>
+                <div class="card-content"><span id="mm_nombreArchivos">Ninguno</span></div>
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">🔍 Filtros</h3>
+                <div class="filtros-grid-mm">
+                    <div class="filter-box">
+                        <label class="filter-label"><input type="checkbox" id="mm_filtroVolumen" class="filter-checkbox" /> Filtrar por volumen</label>
+                        <div class="volumen-inputs">
+                            <input type="number" id="mm_minVolume" placeholder="Mín" class="filter-input"/>
+                            <input type="number" id="mm_maxVolume" placeholder="Máx" class="filter-input"/>
+                        </div>
+                    </div>
+                    <div class="filter-box">
+                        <label class="filter-label"><input type="checkbox" id="mm_filtroDuplicados" class="filter-checkbox" /> Quitar duplicados</label>
+                    </div>
+                    <div class="filter-box filter-box-full">
+                        <label class="filter-label"><input type="checkbox" id="mm_filtroExcluir" class="filter-checkbox" /> Excluir keywords</label>
+                        <input type="text" id="mm_excludeWordsInput" placeholder="palabra1, palabra2, ..." class="filter-text-input"/>
+                    </div>
+                    <div class="filter-box filter-box-full">
+                        <label class="filter-label"><input type="checkbox" id="mm_filtroIncluir" class="filter-checkbox" /> Incluir solo keywords</label>
+                        <input type="text" id="mm_incluirWordsInput" placeholder="palabra1, palabra2, ..." class="filter-text-input"/>
+                    </div>
+                    <div class="filter-box filter-box-full">
+                        <label class="filter-label"><input type="checkbox" id="mm_filtroAgrupar" class="filter-checkbox" /> Agrupar por términos</label>
+                        <input type="text" id="mm_agruparInput" placeholder="Términos separados por coma..." class="filter-text-input"/>
+                    </div>
+                    <div class="filter-box">
+                        <label class="filter-label"><input type="checkbox" id="mm_soloPrimerDato" class="filter-checkbox" /> Solo primera fila por archivo</label>
+                    </div>
                 </div>
-                <div>
-                    <label style="font-weight: 600; display: block; margin-bottom: 8px;">Search Console File (Excel)</label>
-                    <input type="file" id="scConsoleFile" accept=".xlsx" />
+            </div>
+
+            <div class="card">
+                <h3 class="card-title">⚡ Acciones</h3>
+                <div class="action-buttons">
+                    <button id="mm_btnProcesar" class="btn-primary" data-tooltip="Aplica los filtros seleccionados">🔄 Procesar y Mostrar</button>
+                    <button id="mm_btnExportarMultiples" class="btn-primary" data-tooltip="Exporta en un único Excel">📥 Exportar a Excel</button>
+                    <button id="mm_btnCopiarKeywords" class="btn-copiar" data-tooltip="Copia en portapapeles las keywords para pegar en herramienta de SERPs u otros usos.">📋 Copiar keywords</button>
+                    <button id="mm_btnExportarAgrupado" class="btn-success" data-tooltip="Agrupa keywords repetidas">📊 Exportar Agrupado</button>
+                    <button id="mm_btnExportarZip" class="btn-warning" data-tooltip="ZIP con Excel por archivo">🗜️ Exportar en ZIP</button>
+                    <button id="mmbtnUnirArchivos" class="btn-purple" data-tooltip="Une archivos por palabra clave">🔗 Unir por Palabra Clave</button>
                 </div>
+            </div>
+        </aside>
+
+        <!-- PANEL DERECHO -->
+        <main class="panel-principal">
+
+            <!-- Resumen plegable -->
+            <div class="summary-wrapper">
+                <div class="summary-header" onclick="this.closest('.summary-wrapper').classList.toggle('collapsed')">
+                    <span class="toggle-icon">▼</span>
+                    <span class="summary-title">📊 Resumen</span>
+                </div>
+                <div class="summary-body">
+                    <div id="mm_resumenMultiples">Esperando archivos...</div>
+                </div>
+            </div>
+
+            <!-- Barra scroll + Tabla -->
+            <div class="scroll-nav" id="scrollNav2"><div class="scroll-nav-thumb"></div></div>
+            <div id="mm_tablaMultiples"></div>
+        </main>
+    </div>
+</div>
+
+<!-- ================================================================
+     SECCION 3: SEARCH CONSOLE
+     ================================================================ -->
+<div id="sectionSearchConsole" style="display:none;">
+    <div class="sc-layout">
+        <div class="sc-steps-row">
+            <div class="card sc-step">
+                <div class="step-number">1</div>
+                <h3 class="card-title">Carga tus archivos</h3>
+                <p class="sc-description">Sube un archivo de keywords (KeywordTool) y un export de Search Console (Excel)</p>
+                <div class="sc-files-grid">
+                    <div>
+                        <label class="sc-file-label">Keywords File (Excel)</label>
+                        <input type="file" id="scKeywordsFile" accept=".xlsx" />
+                    </div>
+                    <div>
+                        <label class="sc-file-label">Search Console File (Excel)</label>
+                        <input type="file" id="scConsoleFile" accept=".xlsx" />
+                    </div>
+                </div>
+            </div>
+            <div class="card sc-step">
+                <div class="step-number">2</div>
+                <h3 class="card-title">Configurar combinación</h3>
+                <p class="sc-description">Selecciona qué columna usar para unir ambos archivos</p>
+                <div class="sc-config">
+                    <div class="sc-config-row">
+                        <label class="sc-file-label">Columna de unión:</label>
+                        <select id="scJoinColumn">
+                            <option value="keyword">Keyword / Query</option>
+                            <option value="url">URL / Landing Page</option>
+                        </select>
+                    </div>
+                    <label class="sc-config-check">
+                        <input type="checkbox" id="scOnlyMatches" checked />
+                        Solo mostrar keywords con datos de Search Console
+                    </label>
+                </div>
+                <button id="btnCombinarSC" class="btn-primary btn-combinar">🔗 Combinar Archivos</button>
             </div>
         </div>
-        
-        <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px;">
-            <h3>Paso 2: Configurar combinación</h3>
-            <p>Selecciona qué columna usar para unir ambos archivos</p>
-            
-            <div style="margin-top: 15px;">
-                <label style="font-weight: 600;">Columna de unión:</label>
-                <select id="scJoinColumn" style="padding: 8px; border: 1px solid #cbd5e0; border-radius: 6px; margin-left: 10px;">
-                    <option value="keyword">Keyword / Query</option>
-                    <option value="url">URL / Landing Page</option>
-                </select>
+        <div id="scResults" class="card" style="display: none;">
+            <div class="sc-results-header">
+                <h3 class="card-title">Resultados Combinados</h3>
+                <div class="toolbar-actions">
+                    <button id="btnExportSC" class="btn-primary">📥 Exportar Excel</button>
+                    <button id="sc_btnCopiarKeywords" class="btn-copiar" data-tooltip="Copia en portapapeles las keywords para pegar en herramienta de SERPs u otros usos.">📋 Copiar keywords</button>
+                </div>
             </div>
-            
-            <div style="margin-top: 15px;">
-                <label style="font-weight: 600;">
-                    <input type="checkbox" id="scOnlyMatches" checked />
-                    Solo mostrar keywords con datos de Search Console
-                </label>
-            </div>
-            
-            <button id="btnCombinarSC" style="margin-top: 20px; padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                🔗 Combinar Archivos
-            </button>
-        </div>
-        
-        <div id="scResults" style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0;">Resultados Combinados</h3>
-                <button id="btnExportSC" style="padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                    📥 Exportar Excel
-                </button>
-            </div>
+            <div class="scroll-nav" id="scrollNav3"><div class="scroll-nav-thumb"></div></div>
             <div id="scTable"></div>
         </div>
     </div>
+</div>
 
-    <!-- POPUP GRAFICA -->
-    <div id="popupGrafica">
-        <div id="graficaContainer"></div>
-        <button onclick="cerrarPopup()">Cerrar</button>
-    </div>
+<!-- POPUP GRAFICA -->
+<div id="popupGrafica">
+    <div id="graficaContainer"></div>
+    <button onclick="cerrarPopup()">Cerrar</button>
+</div>
 
-    <!-- SCRIPTS -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
-    <script src="script.js"></script>
-    <script src="addon-navegacion.js"></script>
-    <script src="script-multiple.js"></script>
+<!-- SCRIPTS -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="script.js"></script>
+<script src="addon-navegacion.js"></script>
+<script src="script-multiple.js"></script>
+<script src="ui-controls.js"></script>
 </body>
 </html>

@@ -1,5 +1,3 @@
-
-
 document.addEventListener("DOMContentLoaded", () => {
   const mm_rangosVolume = [
     { label: "0", min: 0, max: 0 },
@@ -12,10 +10,28 @@ document.addEventListener("DOMContentLoaded", () => {
     { label: "50001+", min: 50001, max: Infinity }
   ];
 
+  const mm_rangosCompetition = [
+    { label: "0-0.2", min: 0, max: 0.2 },
+    { label: "0.2-0.4", min: 0.2, max: 0.4 },
+    { label: "0.4-0.6", min: 0.4, max: 0.6 },
+    { label: "0.6-0.8", min: 0.6, max: 0.8 },
+    { label: "0.8-1.0", min: 0.8, max: 1.0 }
+  ];
+
+  const mm_bloquesCPC = [
+    { label: "0-0.1", min: 0, max: 0.1 },
+    { label: "0.1-0.2", min: 0.1, max: 0.2 },
+    { label: "0.2-0.5", min: 0.2, max: 0.5 },
+    { label: "0.5-1.0", min: 0.5, max: 1.0 },
+    { label: ">1.0", min: 1.0, max: Infinity }
+  ];
+
   let mm_archivosDatos = [];
   let mm_datosCombinados = [];
   let mm_datosFiltrados = [];
-
+  let mm_filtroResumenVolume = null;
+  let mm_filtroResumenCompetition = null;
+  let mm_filtroResumenCPC = null;
 
   function mm_cleanNumber(numStr) {
     if (typeof numStr === "number") return numStr;
@@ -192,9 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
         resumen.innerHTML = `<strong>Archivos combinados:</strong> ${mmdatosCombinados.length} filas totales.`;
       }
       mm_renderTablaYResumen();
-
-      // Exportar automáticamente
-      exportarExcel(mmdatosCombinados);
     });
   }
 
@@ -270,6 +283,38 @@ document.addEventListener("DOMContentLoaded", () => {
       resultado = primeros;
     }
 
+    // Filtros de resumen (clicables)
+    if (mm_filtroResumenVolume) {
+      const rango = mm_rangosVolume.find(r => r.label === mm_filtroResumenVolume);
+      if (rango) {
+        resultado = resultado.filter(row => {
+          const v = mm_cleanNumber(row["Search Volume (Average)"]);
+          return v >= rango.min && v <= rango.max;
+        });
+      }
+    }
+    if (mm_filtroResumenCompetition) {
+      const rango = mm_rangosCompetition.find(r => r.label === mm_filtroResumenCompetition);
+      if (rango) {
+        resultado = resultado.filter(row => {
+          let v = Number(row["Competition"]);
+          v = isNaN(v) ? 0 : v;
+          return v >= rango.min && v <= rango.max;
+        });
+      }
+    }
+    if (mm_filtroResumenCPC) {
+      const rango = mm_bloquesCPC.find(r => r.label === mm_filtroResumenCPC);
+      if (rango) {
+        resultado = resultado.filter(row => {
+          let cpcStr = String(row["Average CPC (EUR)"] || "0").replace(",", ".");
+          let v = parseFloat(cpcStr);
+          v = isNaN(v) ? 0 : v;
+          return v >= rango.min && v < rango.max;
+        });
+      }
+    }
+
     // Ordenar por la segunda columna descendente
     resultado.sort((a, b) => {
       const key = Object.keys(a)[1];
@@ -295,106 +340,221 @@ document.addEventListener("DOMContentLoaded", () => {
       ? mm_datosFiltrados
       : mm_datosCombinados;
     if (!data || !data.length) {
-      document.getElementById("mm_resumenMultiples").innerHTML =
-        "No hay datos cargados.";
+      document.getElementById("mm_resumenMultiples").innerHTML = "No hay datos cargados.";
       document.getElementById("mm_tablaMultiples").innerHTML = "";
       return;
     }
 
     const keys = Object.keys(data[0]);
 
-    const columnasParaColorear = keys.filter(k => {
-      return k.startsWith("Search Volume") && !k.toLowerCase().includes("average");
-    });
-
-    function colorSegunValor(valor, min, max) {
-      if (valor === null || valor === undefined || isNaN(valor)) return "";
-      if (max === min) return "background-color: rgba(234, 255, 0, 1); color: white;"; // Evitar división entre 0
-      const p = Math.min(Math.max((valor - min) / (max - min), 0), 1);
-      const r = Math.round(255 * p);
-      const g = Math.round(255 * (1 - p));
-      return `background-color: rgb(${r},${g},0); color: white;`;
-    }
-
-    let tablaHtml = `<table border="1" cellpadding="3" style="font-size:0.85em"><thead><tr>`;
-    keys.forEach(k => tablaHtml += `<th>${k}</th>`);
-    tablaHtml += `</tr></thead><tbody>`;
-
+    // ============= RESUMEN CON ENLACES CLICABLES =============
+    const freqRangosVolume = {};
     data.forEach(row => {
-      tablaHtml += "<tr>";
-      const valoresFila = columnasParaColorear
-        .map(col => parseFloat(row[col]))
-        .filter(v => !isNaN(v));
-
-      const minFila = Math.min(...valoresFila);
-      const maxFila = Math.max(...valoresFila);
-
-      keys.forEach(k => {
-        const valorCelda = row[k];
-        let estilo = "";
-
-        if (columnasParaColorear.includes(k)) {
-          const valNum = parseFloat(valorCelda);
-          if (!isNaN(valNum)) {
-            estilo = colorSegunValor(valNum, minFila, maxFila);
-          }
-        }
-
-        tablaHtml += `<td style="${estilo}">${valorCelda ?? ""}</td>`;
-      });
-
-      tablaHtml += "</tr>";
-    });
-
-    tablaHtml += "</tbody></table>";
-
-    document.getElementById("mm_resumenMultiples").innerHTML = `<strong>Filas:</strong> ${data.length}`;
-    document.getElementById("mm_tablaMultiples").innerHTML = tablaHtml;
-  }
-/*     let freqVol = {};
-    data.forEach((row) => {
       const v = mm_cleanNumber(row["Search Volume (Average)"]);
-      const grupo = mm_rangosVolume.find((r) => v >= r.min && v <= r.max);
-      if (grupo) freqVol[grupo.label] = (freqVol[grupo.label] || 0) + 1;
+      const grupo = mm_rangosVolume.find(r => v >= r.min && v <= r.max);
+      freqRangosVolume[grupo ? grupo.label : "Otro"] = (freqRangosVolume[grupo ? grupo.label : "Otro"] || 0) + 1;
+    });
+    const freqRangosCompetition = {};
+    data.forEach(row => {
+      let v = Number(row["Competition"]); v = isNaN(v) ? 0 : v;
+      const grupo = mm_rangosCompetition.find(r => v >= r.min && v <= r.max);
+      freqRangosCompetition[grupo ? grupo.label : "Otro"] = (freqRangosCompetition[grupo ? grupo.label : "Otro"] || 0) + 1;
+    });
+    const freqBloquesCPC = {};
+    data.forEach(row => {
+      let v = parseFloat(String(row["Average CPC (EUR)"] || "0").replace(",", ".")); v = isNaN(v) ? 0 : v;
+      const grupo = mm_bloquesCPC.find(r => v >= r.min && v < r.max);
+      freqBloquesCPC[grupo ? grupo.label : ">1.0"] = (freqBloquesCPC[grupo ? grupo.label : ">1.0"] || 0) + 1;
     });
 
-    let resumenHtml = `<strong>Filas actuales:</strong> ${data.length} <br><br><strong>Distribución volumen:</strong><br>`;
-    mm_rangosVolume.forEach((r) => {
-      if (freqVol[r.label]) resumenHtml += `${r.label}: ${freqVol[r.label]} &nbsp;&nbsp;`;
-    });
+    let resumenHtml = `<div><button id="mm_btnResetResumen">Resetear resumen</button>`;
+    resumenHtml += `<p><strong>Filas cargadas:</strong> ${data.length}</p>`;
 
-    const keys = Object.keys(data[0]);
-    let tablaHtml = `<table border="1" cellpadding="3" style="font-size:0.85em"><thead><tr>`;
-    keys.forEach((k) => (tablaHtml += `<th>${k}</th>`));
-    tablaHtml += `</tr></thead><tbody>`;
-    data.forEach((row) => {
-      tablaHtml += `<tr>`;
-      keys.forEach((k) => {
-        tablaHtml += `<td>${row[k] ?? ""}</td>`;
-      });
-      tablaHtml += `</tr>`;
+    // Filtros activos
+    let filtrosActivos = [];
+    if (document.getElementById('mm_filtroVolumen')?.checked) filtrosActivos.push("volumen");
+    if (document.getElementById('mm_filtroDuplicados')?.checked) filtrosActivos.push("duplicados");
+    if (document.getElementById('mm_filtroExcluir')?.checked) filtrosActivos.push("palabras excluidas");
+    if (document.getElementById('mm_filtroIncluir')?.checked) filtrosActivos.push("inclusión de palabras");
+    if (mm_filtroResumenVolume) filtrosActivos.push(`Volume (${mm_filtroResumenVolume})`);
+    if (mm_filtroResumenCompetition) filtrosActivos.push(`Competition (${mm_filtroResumenCompetition})`);
+    if (mm_filtroResumenCPC) filtrosActivos.push(`CPC (${mm_filtroResumenCPC})`);
+    if (filtrosActivos.length) resumenHtml += `<p><strong>Filtros activos:</strong> ${filtrosActivos.join(', ')}</p>`;
+    resumenHtml += `</div>`;
+
+    // Volumen
+    resumenHtml += `<div><strong>Frecuencia Search Volume (Average):</strong><br>`;
+    mm_rangosVolume.sort((a,b) => a.min - b.min).forEach(r => {
+      const count = freqRangosVolume[r.label] || 0;
+      if (count > 0) resumenHtml += `<a href="#" class="mm_filtroVolume" data-label="${r.label}">${r.label}: <b>${count}</b></a><br>`;
     });
-    tablaHtml += `</tbody></table>`;
+    resumenHtml += `</div>`;
+
+    // Competition
+    resumenHtml += `<div><strong>Rangos Competition:</strong><br>`;
+    mm_rangosCompetition.sort((a,b) => a.min - b.min).forEach(r => {
+      const count = freqRangosCompetition[r.label] || 0;
+      if (count > 0) resumenHtml += `<a href="#" class="mm_filtroCompetition" data-label="${r.label}">${r.label}: <b>${count}</b></a><br>`;
+    });
+    resumenHtml += `</div>`;
+
+    // CPC
+    resumenHtml += `<div><strong>Average CPC (EUR):</strong><br>`;
+    mm_bloquesCPC.sort((a,b) => a.min - b.min).forEach(r => {
+      const count = freqBloquesCPC[r.label] || 0;
+      if (count > 0) resumenHtml += `<a href="#" class="mm_filtroCPC" data-label="${r.label}">${r.label}: <b>${count}</b></a><br>`;
+    });
+    resumenHtml += `</div>`;
 
     document.getElementById("mm_resumenMultiples").innerHTML = resumenHtml;
-    document.getElementById("mm_tablaMultiples").innerHTML = tablaHtml; 
-}*/
-  
 
-
-  // Exportar simple
-  const btnExportarSimples = document.getElementById("mm_btnExportarMultiples");
-  if (btnExportarSimples) {
-    btnExportarSimples.addEventListener("click", () => {
-      if (!mm_datosFiltrados.length) {
-        alert("¡No hay datos para exportar!");
-        return;
+    // Listeners de enlaces de resumen
+    setTimeout(() => {
+      document.querySelectorAll('.mm_filtroVolume').forEach(el => {
+        el.onclick = function(e) { e.preventDefault(); mm_filtroResumenVolume = this.getAttribute('data-label'); mm_aplicarFiltros(); };
+      });
+      document.querySelectorAll('.mm_filtroCompetition').forEach(el => {
+        el.onclick = function(e) { e.preventDefault(); mm_filtroResumenCompetition = this.getAttribute('data-label'); mm_aplicarFiltros(); };
+      });
+      document.querySelectorAll('.mm_filtroCPC').forEach(el => {
+        el.onclick = function(e) { e.preventDefault(); mm_filtroResumenCPC = this.getAttribute('data-label'); mm_aplicarFiltros(); };
+      });
+      const btnReset = document.getElementById('mm_btnResetResumen');
+      if (btnReset) {
+        btnReset.onclick = function() {
+          mm_filtroResumenVolume = null;
+          mm_filtroResumenCompetition = null;
+          mm_filtroResumenCPC = null;
+          mm_aplicarFiltros();
+        };
       }
-      const ws = XLSX.utils.json_to_sheet(mm_datosFiltrados);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Filtrados");
-      XLSX.writeFile(wb, "palabras_clave_filtradas.xlsx");
+    }, 50);
+
+    // ============= TABLA O GRUPOS =============
+    // Detectar columnas de meses (mismo regex que script.js)
+    const mesesRegex = /\(([a-zA-Z]{3})\s\d{4}\)/i;
+    const monthColumns = keys.filter(k => mesesRegex.test(k));
+
+    // Verificar si hay agrupación activa
+    const mmFiltroAgrupar = document.getElementById('mm_filtroAgrupar');
+    if (mmFiltroAgrupar && mmFiltroAgrupar.checked && window.agruparYMostrarKeywords) {
+      const gruposData = window.agruparYMostrarKeywords(data, 'mm_agruparInput');
+      if (gruposData) {
+        const htmlGrupos = window.generarHTMLGrupos(gruposData, keys);
+        if (htmlGrupos) {
+          document.getElementById("mm_tablaMultiples").innerHTML = htmlGrupos;
+
+          // Listeners acordeones DENTRO del contenedor mm_tablaMultiples
+          setTimeout(() => {
+            const container = document.getElementById('mm_tablaMultiples');
+            container.querySelectorAll('.grupo-header').forEach(header => {
+              header.onclick = function() {
+                const accordion = this.closest('.grupo-accordion');
+                const content = accordion.querySelector('.grupo-content');
+                const toggle = this.querySelector('.grupo-toggle');
+                if (content.style.display === 'none' || content.style.display === '') {
+                  content.style.display = 'block';
+                  toggle.textContent = '▼';
+                } else {
+                  content.style.display = 'none';
+                  toggle.textContent = '▶';
+                }
+              };
+            });
+            container.querySelectorAll('.btn-export-group').forEach(btn => {
+              btn.onclick = function(e) {
+                e.stopPropagation();
+                const grupo = this.getAttribute('data-grupo');
+                if (window.exportarGrupo) window.exportarGrupo(grupo, gruposData.grupos[grupo]);
+              };
+            });
+            container.querySelectorAll('.select-all-group').forEach(cb => {
+              cb.onclick = function(e) {
+                e.stopPropagation();
+                const grupoContent = this.closest('.grupo-accordion').querySelector('.grupo-content');
+                if (grupoContent) grupoContent.querySelectorAll('.keyword-checkbox').forEach(ch => { ch.checked = cb.checked; });
+              };
+            });
+            container.querySelectorAll('.btn-chart').forEach(btn => {
+              btn.onclick = function(e) {
+                e.preventDefault(); e.stopPropagation();
+                if (window.mostrarGraficaKeyword) window.mostrarGraficaKeyword(btn.getAttribute('data-keyword'));
+              };
+              btn.onmouseenter = function() { this.style.transform = 'scale(1.2)'; };
+              btn.onmouseleave = function() { this.style.transform = 'scale(1)'; };
+            });
+          }, 50);
+
+          return;
+        }
+      }
+    }
+
+    // Tabla normal
+    let tablaHtml = '<table><thead><tr>';
+    tablaHtml += '<th style="width:40px;"><input type="checkbox" id="mm-select-all-keywords" style="width:18px;height:18px;cursor:pointer;" title="Seleccionar todo"></th>';
+    keys.forEach(k => tablaHtml += `<th>${k}</th>`);
+    tablaHtml += '</tr></thead><tbody>';
+
+    data.forEach(row => {
+      const valoresFila = monthColumns.map(k => {
+        const val = row[k];
+        if (val == null || val === "") return 0;
+        const n = parseFloat(String(val).replace(/,/g, ""));
+        return isNaN(n) ? 0 : n;
+      });
+      const min = Math.min(...valoresFila);
+      const max = Math.max(...valoresFila);
+      const rango = max === min ? 1 : max - min;
+
+      tablaHtml += '<tr>';
+      tablaHtml += `<td style="text-align:center;"><input type="checkbox" class="mm-keyword-checkbox" data-keyword="${row['Keywords'] || ''}" style="width:18px;height:18px;cursor:pointer;"></td>`;
+
+      keys.forEach(k => {
+        let style = "";
+        if (monthColumns.includes(k)) {
+          const val = row[k];
+          let numValue = 0;
+          if (val != null && val !== "") { const n = parseFloat(String(val).replace(/,/g,"")); numValue = isNaN(n)?0:n; }
+          let p = (numValue - min) / rango;
+          let r, g;
+          if (p <= 0.5) { r = Math.round(2*p*255); g = 255; }
+          else { r = 255; g = Math.round(2*(1-p)*255); }
+          style = `background:rgb(${r},${g},0);`;
+        }
+        if (k === 'Keywords' && row[k]) {
+          const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(row[k])}`;
+          tablaHtml += `<td style="display:flex;align-items:center;gap:8px;padding:8px;">
+            <a href="${googleUrl}" target="_blank" style="color:#667eea;text-decoration:none;flex:1;" title="Buscar en Google">${row[k]}</a>
+            <button class="mm-btn-chart" data-keyword="${row[k]}" title="Ver evolución" style="background:none;border:none;cursor:pointer;font-size:18px;padding:4px;transition:transform 0.2s;">📈</button>
+          </td>`;
+        } else {
+          tablaHtml += `<td style="${style}">${row[k] ?? ""}</td>`;
+        }
+      });
+      tablaHtml += '</tr>';
     });
+    tablaHtml += '</tbody></table>';
+
+    document.getElementById("mm_tablaMultiples").innerHTML = tablaHtml;
+
+    // Listeners tabla normal
+    setTimeout(() => {
+      const selectAll = document.getElementById('mm-select-all-keywords');
+      if (selectAll) {
+        selectAll.onclick = function() {
+          document.querySelectorAll('.mm-keyword-checkbox').forEach(cb => { cb.checked = selectAll.checked; });
+        };
+      }
+      document.querySelectorAll('.mm-btn-chart').forEach(btn => {
+        btn.onclick = function(e) {
+          e.preventDefault(); e.stopPropagation();
+          if (window.mostrarGraficaKeyword) window.mostrarGraficaKeyword(btn.getAttribute('data-keyword'));
+        };
+        btn.onmouseenter = function() { this.style.transform = 'scale(1.2)'; };
+        btn.onmouseleave = function() { this.style.transform = 'scale(1)'; };
+      });
+    }, 50);
   }
 
   // Exportar agrupado
@@ -508,6 +668,68 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("mm_btnExportarZip").addEventListener("click", mm_exportarZip);
   document.getElementById("mm_btnProcesar").addEventListener("click", mm_aplicarFiltros);
+
+  // Listeners automáticos para filtros - aplicar sin botón
+  const filtrosAutoApply = [
+    'mm_filtroVolumen',
+    'mm_filtroDuplicados',
+    'mm_filtroExcluir',
+    'mm_filtroIncluir',
+    'mm_soloPrimerDato'
+  ];
+
+  filtrosAutoApply.forEach(id => {
+    const elemento = document.getElementById(id);
+    if (elemento) {
+      elemento.addEventListener('change', mm_aplicarFiltros);
+    }
+  });
+
+  // Listeners para inputs de texto - aplicar al cambiar
+  const inputsAutoApply = [
+    'mm_minVolume',
+    'mm_maxVolume',
+    'mm_excludeWordsInput',
+    'mm_incluirWordsInput'
+  ];
+
+  inputsAutoApply.forEach(id => {
+    const elemento = document.getElementById(id);
+    if (elemento) {
+      elemento.addEventListener('input', debounce(mm_aplicarFiltros, 500));
+    }
+  });
+
+  // Función debounce para evitar múltiples llamadas
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+
+  // Listener para agrupación en múltiples archivos
+  const mmFiltroAgrupar = document.getElementById('mm_filtroAgrupar');
+  if (mmFiltroAgrupar) {
+    mmFiltroAgrupar.addEventListener('change', function() {
+      mm_renderTablaYResumen();
+    });
+  }
+  // Listener para input de agrupación
+  const mmAgruparInput = document.getElementById('mm_agruparInput');
+  if (mmAgruparInput) {
+    mmAgruparInput.addEventListener('input', function() {
+      if (document.getElementById('mm_filtroAgrupar')?.checked) {
+        mm_renderTablaYResumen();
+      }
+    });
+  }
 
 });
 
