@@ -5,7 +5,12 @@
 // Funciones globales para cerrar popups
 function cerrarPopup() {
   document.getElementById('popupGrafica').style.display = 'none';
-  document.getElementById('graficaContainer').innerHTML = '';
+  // Limpiar solo el contenido del canvas, preservando el botón de cerrar
+  const container = document.getElementById('graficaContainer');
+  const canvas = container.querySelector('canvas');
+  if (canvas) {
+    canvas.remove();
+  }
 }
 
 function cerrarInfoApp() {
@@ -18,6 +23,23 @@ function abrirInfoApp() {
 
 // Event listeners para navegacion
 document.addEventListener("DOMContentLoaded", function() {
+  
+  // Listener para botón de cerrar gráfica
+  const btnCerrarGrafica = document.getElementById('btnCerrarGrafica');
+  if (btnCerrarGrafica) {
+    btnCerrarGrafica.addEventListener('click', cerrarPopup);
+  }
+  
+  // Click en el fondo oscuro del popup para cerrar
+  const popupGrafica = document.getElementById('popupGrafica');
+  if (popupGrafica) {
+    popupGrafica.addEventListener('click', function(e) {
+      // Solo cerrar si se hace click en el fondo, no en el contenido
+      if (e.target.id === 'popupGrafica') {
+        cerrarPopup();
+      }
+    });
+  }
   
   // Listener para botón de información
   const btnInfoApp = document.getElementById('btnInfoApp');

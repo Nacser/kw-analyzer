@@ -114,27 +114,32 @@ function handleFile(e) {
         // Solo si el elemento existe en el DOM
         const select = document.getElementById('selectMes');
         if(select) {
-            select.innerHTML = "";
+            // Clonar el select para eliminar todos los listeners previos
+            const newSelect = select.cloneNode(false);
+            select.parentNode.replaceChild(newSelect, select);
+            
+            // Ahora trabajamos con el nuevo select limpio
+            const selectMes = document.getElementById('selectMes');
+            selectMes.innerHTML = "";
 
             // Primero, añade Search Volume (Average)
             if ('Search Volume (Average)' in excelData[0]) {
                 const optAvg = document.createElement("option");
                 optAvg.value = 'Search Volume (Average)';
                 optAvg.textContent = 'Search Volume (Average)';
-                select.appendChild(optAvg);
+                selectMes.appendChild(optAvg);
             }
 
-            // Luego añade los meses normalmente
+            // Luego añade los meses normalmente (ahora puede ser 12, 24 o cualquier número)
             monthColumns.forEach(col => {
                 const opt = document.createElement("option");
                 opt.value = col;
                 opt.textContent = col.replace("Search Volume ",""); // opcional: oculta el prefijo
-                select.appendChild(opt);
+                selectMes.appendChild(opt);
             });
-            if (!select.hasAttribute('listener-attached')) {
-                select.addEventListener('change', aplicarFiltrosMultiplesYResumen);
-                select.setAttribute('listener-attached','true');
-            }
+            
+            // Añadir listener al nuevo select
+            selectMes.addEventListener('change', aplicarFiltrosMultiplesYResumen);
         }
 
 
@@ -596,7 +601,12 @@ document.getElementById('btnExportExcel').addEventListener('click', function() {
 // ---------- Pop-up gráfica
   function cerrarPopup() {
     document.getElementById('popupGrafica').style.display = 'none';
-    document.getElementById('graficaContainer').innerHTML = '';
+    // Limpiar solo el contenido del canvas, preservando el botón de cerrar
+    const container = document.getElementById('graficaContainer');
+    const canvas = container.querySelector('canvas');
+    if (canvas) {
+      canvas.remove();
+    }
   }
 
   function mostrarGraficaKeyword(keyword) {
@@ -629,8 +639,20 @@ document.getElementById('btnExportExcel').addEventListener('click', function() {
 
     console.log('Labels:', labels, 'Values:', values);
 
+    const container = document.getElementById('graficaContainer');
+    
+    // Limpiar canvas anterior si existe
+    const oldCanvas = container.querySelector('canvas');
+    if (oldCanvas) {
+      oldCanvas.remove();
+    }
+    
+    // Crear nuevo canvas y añadirlo al container
+    const canvas = document.createElement('canvas');
+    canvas.id = 'graficoKeyword';
+    container.appendChild(canvas);
+    
     document.getElementById('popupGrafica').style.display = 'block';
-    document.getElementById('graficaContainer').innerHTML = '<canvas id="graficoKeyword"></canvas>';
     console.log('Mostrando div gráfico, canvas creado');
 
     // Crea la gráfica

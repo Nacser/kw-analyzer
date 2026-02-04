@@ -391,24 +391,75 @@ input[type="file"]:hover { border-color: #667eea; background: #f7faff; }
    BARRA DE NAVEGACIÓN SCROLL (mini scrollbar clickable)
    ============================================================================ */
 .scroll-nav {
-  height: 5px;
-  background: #edf2f7;
-  border-radius: 3px;
+  height: 8px;
+  background: linear-gradient(to bottom, #e2e8f0, #cbd5e0);
+  border: 1px solid #cbd5e0;
+  border-radius: 4px;
   position: relative;
   cursor: pointer;
-  overflow: hidden;
-  transition: opacity 0.2s;
+  overflow: visible;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
 }
-.scroll-nav.hidden { opacity: 0; pointer-events: none; height: 0; margin: 0; }
+
+.scroll-nav::before {
+  content: '◄';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.scroll-nav::after {
+  content: '►';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.scroll-nav:hover {
+  height: 10px;
+  border-color: #a0aec0;
+}
+
+.scroll-nav.hidden { 
+  opacity: 0; 
+  pointer-events: none; 
+  height: 0; 
+  margin: 0; 
+  border: none;
+}
 
 .scroll-nav-thumb {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 3px;
-  position: absolute; left: 0; top: 0;
-  min-width: 32px;
-  transition: left 0.06s linear;
-  box-shadow: 0 0 4px rgba(102,126,234,0.3);
+  position: absolute; 
+  left: 0; 
+  top: 0;
+  min-width: 40px;
+  transition: left 0.06s linear, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 2px 6px rgba(102,126,234,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+  border: 1px solid rgba(102,126,234,0.3);
+  cursor: grab;
+}
+
+.scroll-nav-thumb:hover {
+  box-shadow: 0 3px 10px rgba(102,126,234,0.6), inset 0 1px 0 rgba(255,255,255,0.4);
+  transform: scaleY(1.2);
+}
+
+.scroll-nav-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 1px 4px rgba(102,126,234,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 
 /* ============================================================================
@@ -711,21 +762,19 @@ tr:hover td:first-child, tr:hover td:nth-child(2) {
 }
 #graficaContainer canvas { margin-bottom: 14px; }
 #popupGrafica .close-btn {
-  position: absolute; top: 10px; right: 10px;
-  width: 26px; height: 26px; border: none;
+  position: absolute; top: 14px; right: 14px;
+  width: 32px; height: 32px; border: none;
   background: #e53e3e; color: white; border-radius: 50%;
-  cursor: pointer; font-size: 16px;
+  cursor: pointer; font-size: 20px; font-weight: bold;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s;
+  transition: all 0.2s; z-index: 10;
+  box-shadow: 0 2px 8px rgba(229, 62, 62, 0.3);
 }
-#popupGrafica .close-btn:hover { background: #c53030; transform: rotate(90deg); }
-#popupGrafica .btn-container { text-align: center; }
-#popupGrafica button:not(.close-btn) {
-  padding: 8px 20px; background: #667eea; color: white;
-  border: none; border-radius: 5px; cursor: pointer;
-  font-weight: 600; font-size: 13px; transition: all 0.2s;
+#popupGrafica .close-btn:hover { 
+  background: #c53030; 
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 4px 12px rgba(197, 48, 48, 0.4);
 }
-#popupGrafica button:not(.close-btn):hover { background: #764ba2; }
 
 /* ============================================================================
    POPUP — información app

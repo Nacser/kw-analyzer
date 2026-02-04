@@ -1,17 +1,17 @@
 # Analizador de Palabras Clave
 
-Herramienta web para analizar, filtrar y exportar datos de palabras clave exportados desde KeywordTool. Funciona íntegramente en el navegador, sin servidor ni instalación necesaria. Se abre directamente con `index.html`.
+Herramienta web para analizar, filtrar y exportar datos de palabras clave exportados desde KeywordTool. Funciona íntegramente en el navegador, sin servidor ni instalación necesaria. Se abre directamente con `index-improved-final.html`.
 
 ---
 
 ## Archivos del proyecto
 
 ```
-├── index.html                         # Estructura HTML, los tres modos y sus paneles
-├── styles.css                         # Estilos globales, layout, tablas, componentes UI
+├── index-improved-final.html          # Estructura HTML, los tres modos y sus paneles
+├── styles-improved.css                # Estilos globales, layout, tablas, componentes UI
 ├── script.js                          # Lógica del modo "Un archivo"
 ├── addon-navegacion.js                # Navegación entre modos, Search Console y agrupación
-├── script-multiple.js                 # Lógica del modo "Varios archivos"
+├── script-multiple-improved.js        # Lógica del modo "Varios archivos"
 └── ui-controls.js                     # Sidebar, resumen plegable, scroll nav y copiar keywords
 ```
 
@@ -29,7 +29,7 @@ Herramienta web para analizar, filtrar y exportar datos de palabras clave export
 ## Cómo usar
 
 1. Descarga todos los archivos en la misma carpeta.
-2. Abre `index.html` en un navegador moderno (Chrome, Firefox, Edge, Safari).
+2. Abre `index-improved-final.html` en un navegador moderno (Chrome, Firefox, Edge, Safari).
 3. Selecciona el modo de trabajo desde la barra superior.
 
 No hace falta conexión a internet ni servidor local, excepto para la carga inicial de las librerías CDN.
@@ -73,8 +73,7 @@ Permite cargar y procesar dos o más archivos Excel simultáneamente. Comparte l
 | **Procesar y Mostrar** | Aplica los filtros activos y renderiza la tabla combinada |
 | **Unir por Palabra Clave** | Requiere exactamente dos archivos (uno de volumen, otro de clicks). Detecta automáticamente cuál es cuál y combina las filas por keyword, rellenando campos vacíos con datos del segundo archivo. Una sola fila por keyword en el resultado |
 | **Solo primera fila por archivo** | Muestra únicamente la primera fila de cada archivo tras filtrar |
-| **Exportar a Excel** | Descarga todos los datos filtrados en un único `.xlsx` |
-| **Exportar Agrupado** | Genera un Excel con una hoja por grupo de keywords (agrupa por primera palabra; grupos con 6 o menos filas se mueven a una hoja "Otros") |
+| **Exportar a Excel** | Descarga todos los datos filtrados agrupados por primera palabra en un único archivo `.xlsx` con múltiples hojas (una por grupo). Los grupos con 6 o menos filas se consolidan en una hoja "Otros" |
 | **Exportar en ZIP** | Mismo agrupamiento que el anterior, pero cada grupo en un archivo Excel separado dentro de un `.zip`. El nombre de cada archivo incluye el valor máximo de volumen del grupo |
 
 ---
@@ -98,7 +97,7 @@ El resultado es una tabla con todas las columnas originales de KeywordTool más 
 
 ### Mapa de calor mensual
 
-Las columnas de datos mensuales (`Search Volume (Mes Año)`) se pintan automáticamente con un gradiente por fila: verde para el valor más bajo, amarillo en el punto medio y rojo para el más alto. El cálculo se hace por cada fila independientemente.
+Las columnas de datos mensuales (`Search Volume (Mes Año)`) se pintan automáticamente con un gradiente por fila: verde para el valor más bajo, amarillo en el punto medio y rojo para el más alto. El cálculo se hace por cada fila independientemente. La aplicación soporta archivos con cualquier número de meses (12, 24 o más), adaptándose automáticamente al número de columnas mensuales disponibles.
 
 ### Búsqueda en Google
 
@@ -162,11 +161,11 @@ Las dos primeras columnas de la tabla (checkbox y Keywords) se fijan al desplaza
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                 index.html                           │
+│                 index-improved-final.html            │
 │  (estructura HTML, los tres modos, carga de scripts) │
 └───────────┬─────────────┬───────────┬───────────────┘
             │             │           │
-      script.js    addon-navegacion  script-multiple.js
+      script.js    addon-navegacion  script-multiple-improved.js
       (modo 1)     .js               (modo 2)
                    (modo 3 +
                     agrupación)
@@ -181,6 +180,6 @@ Las dos primeras columnas de la tabla (checkbox y Keywords) se fijan al desplaza
 |---|---|
 | `script.js` | Carga de Excel, filtrado central, resumen con enlaces clicables, generación de tabla, mapa de calor, gráfica de evolución. Todo el estado del modo "Un archivo" vive aquí. |
 | `addon-navegacion.js` | Navegación entre los tres modos (visibilidad de secciones), popup de información, toda la lógica de Search Console (carga, unión, renderizado) y las funciones globales de agrupación (`agruparYMostrarKeywords`, `generarHTMLGrupos`, `exportarGrupo`). |
-| `script-multiple.js` | Estado y lógica del modo "Varios archivos": carga de múltiples archivos, unión por palabra clave, filtrado, resumen, renderizado de tabla o agrupados, exportación a Excel/agrupado/ZIP. |
+| `script-multiple-improved.js` | Estado y lógica del modo "Varios archivos": carga de múltiples archivos, unión por palabra clave, filtrado, resumen, renderizado de tabla o agrupados, exportación a Excel/agrupado/ZIP. |
 | `ui-controls.js` | Interacciones de interfaz transversales a todos los modos: colapso del sidebar, toggle del resumen, barras de scroll horizontal y copia de keywords al portapapeles. Se ejecuta como IIFE y no expone estado global. |
-| `styles.css` | Todo el CSS: header, grid de dos columnas, sidebar plegable, cards, filtros, tablas con sticky columns y mapa de calor, acordeones de agrupación, scroll nav, botones, popup gráfica, responsive. |
+| `styles-improved.css` | Todo el CSS: header, grid de dos columnas, sidebar plegable, cards, filtros, tablas con sticky columns y mapa de calor, acordeones de agrupación, scroll nav, botones, popup gráfica, responsive. |

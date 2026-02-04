@@ -160,7 +160,7 @@
             </div>
 
             <!-- Barra scroll + Tabla -->
-            <div class="scroll-nav" id="scrollNav1"><div class="scroll-nav-thumb"></div></div>
+            <div class="scroll-nav" id="scrollNav1" title="Barra de navegación horizontal: haz clic para saltar a cualquier posición de la tabla"><div class="scroll-nav-thumb"></div></div>
             <div id="table"></div>
         </main>
     </div>
@@ -218,9 +218,8 @@
                 <h3 class="card-title">⚡ Acciones</h3>
                 <div class="action-buttons">
                     <button id="mm_btnProcesar" class="btn-primary" data-tooltip="Aplica los filtros seleccionados">🔄 Procesar y Mostrar</button>
-                    <button id="mm_btnExportarMultiples" class="btn-primary" data-tooltip="Exporta en un único Excel">📥 Exportar a Excel</button>
+                    <button id="mm_btnExportarMultiples" class="btn-primary" data-tooltip="Exporta en un único Excel agrupado por primera palabra">📥 Exportar a Excel</button>
                     <button id="mm_btnCopiarKeywords" class="btn-copiar" data-tooltip="Copia en portapapeles las keywords para pegar en herramienta de SERPs u otros usos.">📋 Copiar keywords</button>
-                    <button id="mm_btnExportarAgrupado" class="btn-success" data-tooltip="Agrupa keywords repetidas">📊 Exportar Agrupado</button>
                     <button id="mm_btnExportarZip" class="btn-warning" data-tooltip="ZIP con Excel por archivo">🗜️ Exportar en ZIP</button>
                     <button id="mmbtnUnirArchivos" class="btn-purple" data-tooltip="Une archivos por palabra clave">🔗 Unir por Palabra Clave</button>
                 </div>
@@ -242,7 +241,7 @@
             </div>
 
             <!-- Barra scroll + Tabla -->
-            <div class="scroll-nav" id="scrollNav2"><div class="scroll-nav-thumb"></div></div>
+            <div class="scroll-nav" id="scrollNav2" title="Barra de navegación horizontal: haz clic para saltar a cualquier posición de la tabla"><div class="scroll-nav-thumb"></div></div>
             <div id="mm_tablaMultiples"></div>
         </main>
     </div>
@@ -297,7 +296,7 @@
                     <button id="sc_btnCopiarKeywords" class="btn-copiar" data-tooltip="Copia en portapapeles las keywords para pegar en herramienta de SERPs u otros usos.">📋 Copiar keywords</button>
                 </div>
             </div>
-            <div class="scroll-nav" id="scrollNav3"><div class="scroll-nav-thumb"></div></div>
+            <div class="scroll-nav" id="scrollNav3" title="Barra de navegación horizontal: haz clic para saltar a cualquier posición de la tabla"><div class="scroll-nav-thumb"></div></div>
             <div id="scTable"></div>
         </div>
     </div>
@@ -305,8 +304,9 @@
 
 <!-- POPUP GRAFICA -->
 <div id="popupGrafica">
-    <div id="graficaContainer"></div>
-    <button onclick="cerrarPopup()">Cerrar</button>
+    <div id="graficaContainer">
+        <button id="btnCerrarGrafica" class="close-btn" title="Cerrar">×</button>
+    </div>
 </div>
 
 <!-- SCRIPTS -->

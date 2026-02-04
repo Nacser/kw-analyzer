@@ -598,9 +598,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     XLSX.writeFile(wb, "clave_agrupadas.xlsx");
   }
-  const btnExportarAgrup = document.getElementById("mm_btnExportarAgrupado");
-  if (btnExportarAgrup) {
-    btnExportarAgrup.addEventListener("click", mm_exportarConAgrupacion);
+  const btnExportarMultiples = document.getElementById("mm_btnExportarMultiples");
+  if (btnExportarMultiples) {
+    btnExportarMultiples.addEventListener("click", mm_exportarConAgrupacion);
   }
 
   // Exportar a archivos separados en ZIP
